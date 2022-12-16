@@ -2,11 +2,6 @@ pipeline {
 	agent any
 	//agent { docker { image 'maven:3.6.3'}}
 	//agent { docker { image 'node:18.12.1'}}
-	environment {
-		dockerHome = tool 'myDocker'
-		mavenHome = tool 'myMaven'
-		PATH = "$dockerHome/bin:$mavenHome/bin:$PATH"
-	}
 	stages {
 		stage("Build") {
 			steps{
@@ -21,6 +16,23 @@ pipeline {
 				echo " BUILD URL - $BUILD_URL"
 			}
 
+		}
+		stage("Build Docker Image") {
+			steps {
+				script{
+					dockerImage=docker.build("rbera1/rbera1/hello-world-nodejs:${env.BUILD_TAG}")
+				}
+			}
+		}
+		stage("Push Docker Image") {
+			steps {
+				script {
+					docker.withRegistry('','dockerhub') {
+						dockerImage.Push();
+						dockerImage.Push('latest');
+					}
+				}
+			}
 		}
 		stage("Test") {
 			steps{
